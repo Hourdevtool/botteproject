@@ -1,0 +1,50 @@
+# Database / Docker Data
+mysql_data/
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Composer Dependencies
+vendor/
+composer.lock
+
+# Node Modules (if any frontend is added later)
+node_modules/
+package-lock.json
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.bak
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+logs/
+error.log
+access.log
+
+# Cache & Temporary files
+*.cache
+*.tmp
+temp/
+tmp/
+
+# Uploaded Files (if the system has file uploads)
+server/uploads/
+server/public/uploads/
