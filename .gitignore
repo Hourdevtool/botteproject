@@ -1,6 +1,6 @@
 # Database / Docker Data
 mysql_data/
-
+ขวด/
 # Environment Variables
 .env
 .env.*
