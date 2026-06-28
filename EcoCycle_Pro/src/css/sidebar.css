@@ -1,0 +1,331 @@
+/* src/css/sidebar.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.sidebar {
+  width: 260px;
+  height: 100vh;
+  background: linear-gradient(180deg, #dbfbe8 0%, #c7f1d8 54%, #b8e8cc 100%);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  color: #1A4D2E;
+  position: sticky;
+  top: 0;
+  left: 0;
+  border-right: 1px solid rgba(26, 77, 46, 0.08);
+  box-shadow: 0 22px 60px rgba(34, 95, 56, 0.12);
+  border-radius: 0 24px 24px 0;
+  overflow: hidden;
+}
+
+.sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0.45), transparent 35%);
+  pointer-events: none;
+}
+
+.sidebar > * {
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 30px;
+  padding: 0 8px;
+}
+
+.sidebar-logo-icon {
+  color: #1A4D2E;
+}
+
+.sidebar-logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0d3819;
+}
+
+.sidebar-profile {
+  background: linear-gradient(135deg, rgba(157, 229, 200, 0.95), rgba(198, 244, 217, 0.82));
+  border: 1px solid rgba(26, 77, 46, 0.08);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 30px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 24px rgba(40, 110, 70, 0.08);
+}
+
+.sidebar-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+.sidebar-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-profile-info h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #183f27;
+}
+
+.sidebar-profile-info p {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(24, 63, 39, 0.74);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #355c45;
+  font-weight: 600;
+  font-size: 14px;
+  transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nav-item:hover {
+  background-color: rgba(108, 198, 124, 0.18);
+  color: #1A4D2E;
+  transform: translateX(2px);
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, #80d79d, #6cc67c);
+  color: #11381d;
+  box-shadow: 0 10px 20px rgba(62, 139, 86, 0.2);
+}
+
+.nav-icon {
+  color: inherit;
+}
+
+.nav-item-skeleton {
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(26, 77, 46, 0.05);
+  pointer-events: none;
+}
+
+.skeleton-avatar,
+.skeleton-icon,
+.skeleton-line {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(182, 226, 200, 0.85) 25%, rgba(213, 242, 222, 0.95) 37%, rgba(182, 226, 200, 0.85) 63%);
+  background-size: 400% 100%;
+  animation: sidebar-shimmer 1.2s ease-in-out infinite;
+}
+
+.skeleton-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 8px;
+}
+
+.skeleton-line {
+  border-radius: 999px;
+}
+
+.loading-profile {
+  flex: 1;
+}
+
+.skeleton-title {
+  height: 12px;
+  width: 68%;
+  margin-bottom: 8px;
+}
+
+.skeleton-subtitle {
+  height: 10px;
+  width: 84%;
+}
+
+.skeleton-nav-line {
+  height: 12px;
+  width: 72%;
+}
+
+@keyframes sidebar-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.btn-deploy-machine {
+  background-color: #5EBC69;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+  
+}
+
+.btn-deploy-machine:hover {
+  background-color: #51a85a;
+}
+
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid rgba(26, 77, 46, 0.15);
+  margin: 0;
+  width: 100%;
+}
+
+.sidebar-bottom-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Mobile Responsive Sidebar */
+.mobile-header {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #C0F1D8;
+    padding: 0.75rem 1rem;
+    position: fixed; /* เปลี่ยนเป็น fixed เพื่อให้อยู่กับที่ชัวร์ๆ บนมือถือ */
+    top: 0;
+    left: 0;
+    z-index: 100;
+    width: 100%;
+    height: 64px;
+    box-sizing: border-box;
+    border-bottom: 1px solid rgba(26, 77, 46, 0.08);
+  }
+
+  .mobile-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-toggle {
+    background: rgba(255,255,255,0.25);
+    border: 1px solid rgba(26, 77, 46, 0.1);
+    color: #1A4D2E;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    padding: 0;
+    transition: background-color 0.2s;
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 98;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 64px; 
+    left: -100%;
+    width: 280px; /* กำหนดขนาดกว้างพอดีสายตา ไม่ให้แผ่เต็มจอเกินไป */
+    height: calc(100vh - 64px);
+    height: calc(100dvh - 64px); /* รองรับ Dynamic Viewport ของ iOS/Android */
+    z-index: 99;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(0);
+    background: linear-gradient(180deg, #dbfbe8 0%, #c7f1d8 100%);
+    overflow-y: auto;
+    border-radius: 0; /* บนมือถือไม่ควรโค้งมนขอบขวา */
+    box-shadow: 10px 0 30px rgba(0,0,0,0.1);
+    padding: 20px 16px;
+  }
+
+  .sidebar.open {
+    left: 0;
+    transform: translateX(0);
+  }
+
+  .sidebar-header.desktop-only {
+    display: none;
+  }
+  
+  .sidebar-nav {
+    flex: unset;
+  }
+
+  .sidebar-bottom {
+    margin-top: 30px;
+    padding-bottom: 20px;
+  }
+
+  /* เพิ่มขนาดพื้นที่กดสำหรับนิ้วมือบนสมาร์ทโฟน */
+  .nav-item {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+
+  .sidebar-profile {
+    padding: 12px;
+    margin-bottom: 20px;
+  }
+}

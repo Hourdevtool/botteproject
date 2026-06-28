@@ -62,7 +62,8 @@ class Router
             '/api/logout',
             '/api/register',
             '/api/user/machines/{m_id}/login',
-            '/api/user/machines/{m_id}/register'
+            '/api/user/machines/{m_id}/register',
+            '/api/user/profile/{id}'
         ];
 
         $isPublic = false;

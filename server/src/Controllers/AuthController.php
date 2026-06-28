@@ -69,6 +69,7 @@ class AuthController extends BaseController
                 "message" => "เข้าสู่ระบบสำเร็จ",
                 "token" => $jwt,
                 "user" => [
+                    "id" => $user['id'],
                     "op_name" => $user['op_name'],
                     "role" => $user['role'] ?? 'user',
                     "email" => $user['email']

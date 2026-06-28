@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\member\Member;
+use App\Models\user\User;
 
 class UserController extends BaseController
 {
@@ -41,7 +42,41 @@ class UserController extends BaseController
         $created = $this->memberModel->Create($insertData);
 
         if ($created) {
-            $this->jsonResponse(['status' => 'success', 'message' => 'ลงทะเบียนสำเร็จ'], 201);
+            // Fetch the newly created member to get the ID
+            $member = $this->memberModel->getByPhoneAndMachine($data['phonenumber'], $m_id);
+            
+            if ($member) {
+                // Generate token
+                $payload = [
+                    "member_id" => $member['id'],
+                    "m_id" => $m_id,
+                    "role" => "user",
+                    "exp" => time() + (84600 * 30),
+                ];
+
+                $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
+                $payloadEncoded = json_encode($payload);
+
+                $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+                $base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payloadEncoded));
+
+                $signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, $this->secret_key, true);
+                $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+
+                $jwt = $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
+
+                $this->jsonResponse([
+                    'status' => 'success',
+                    'message' => 'ลงทะเบียนสำเร็จ',
+                    'token' => $jwt,
+                    'data' => [
+                        'id' => $member['id'],
+                        'fname' => $member['fname'],
+                        'lname' => $member['lname'],
+                        'point' => $member['point']
+                    ]
+                ], 201);
+            }
         }
         $this->jsonResponse(['status' => 'error', 'message' => 'เกิดข้อผิดพลาดในการลงทะเบียน'], 500);
     }
@@ -55,6 +90,11 @@ class UserController extends BaseController
         $member = $this->memberModel->getByPhoneAndMachine($data['phonenumber'], $m_id);
 
         if ($member) {
+            // Get machine config to determine type
+            $configModel = new \App\Models\machine\Config();
+            $config = $configModel->getByMachineId($m_id);
+            $machine_type = $config ? $config['type'] : 'point';
+
             // Generate token
             $payload = [
                 "member_id" => $member['id'],
@@ -82,7 +122,12 @@ class UserController extends BaseController
                     'id' => $member['id'],
                     'fname' => $member['fname'],
                     'lname' => $member['lname'],
-                    'point' => $member['point']
+                    'point' => $member['point'],
+                    'machine_type' => $machine_type,
+                    'phonenumber' => $member['phonenumber'] ?? null,
+                    'age' => $member['age'] ?? null,
+                    'gender' => $member['gender'] ?? null,
+                    'localtion' => $member['localtion'] ?? null
                 ]
             ], 200);
         }
@@ -160,7 +205,7 @@ class UserController extends BaseController
         ], 200);
     }
 
-    // ทำการแลกแต้ม/แลกเงิน (ตัดแต้ม)
+    // ทำการแลกแต้ม/แลกเงิน (ส่งคำขอ — รอเจ้าของตู้อนุมัติ)
     public function redeem($m_id)
     {
         $auth = new \App\Middleware\AuthMiddleware();
@@ -186,24 +231,25 @@ class UserController extends BaseController
             $this->jsonResponse(['status' => 'error', 'message' => 'แต้ม/ยอดเงิน ไม่เพียงพอสำหรับการแลก'], 400);
         }
 
-        // ตัดแต้ม
-        $newPoint = $currentPoint - $amount;
-        $this->memberModel->Update($member['id'], ['point' => $newPoint]);
-
-        // บันทึกประวัติ (ใช้เป็นค่าติดลบเพื่อให้รู้ว่าเป็นการตัดออก)
-        $pointlogModel = new \App\Models\machine\Pointlog();
-        $pointlogModel->Create([
+        // บันทึกคำขอแลก — ยังไม่ตัดแต้ม รอให้เจ้าของตู้อนุมัติ
+        $redeemRequestModel = new \App\Models\machine\RedeemRequest();
+        $created = $redeemRequestModel->Create([
             'u_id' => $member['id'],
             'm_id' => $m_id,
-            'point' => -$amount
+            'amount' => $amount,
+            'status' => 'pending'
         ]);
 
+        if (!$created) {
+            $this->jsonResponse(['status' => 'error', 'message' => 'ไม่สามารถส่งคำขอแลกได้'], 500);
+        }
+
         $this->jsonResponse([
-            'status' => 'success',
-            'message' => 'แลกเปลี่ยนสำเร็จ',
+            'status' => 'pending',
+            'message' => 'ส่งคำขอแลกสำเร็จ รอเจ้าของตู้อนุมัติ',
             'data' => [
-                'redeemed_amount' => $amount,
-                'remaining_point' => $newPoint
+                'requested_amount' => $amount,
+                'current_point' => $currentPoint
             ]
         ], 200);
     }
@@ -218,16 +264,107 @@ class UserController extends BaseController
         if (isset($payload['member_id'])) {
             $member = $this->memberModel->findById($payload['member_id']);
             if ($member) {
+                // Get machine config to determine type
+                $m_id = $payload['m_id'] ?? null;
+                $machine_type = 'point';
+                if ($m_id) {
+                    $configModel = new \App\Models\machine\Config();
+                    $config = $configModel->getByMachineId($m_id);
+                    if ($config) {
+                        $machine_type = $config['type'];
+                    }
+                }
+
                 $this->jsonResponse([
                     'status' => 'success',
                     'data' => [
+                        'id' => $member['id'] ?? null,
                         'fname' => $member['fname'],
                         'lname' => $member['lname'],
-                        'point' => $member['point']
+                        'point' => $member['point'],
+                        'machine_type' => $machine_type,
+                        'phonenumber' => $member['phonenumber'] ?? null,
+                        'age' => $member['age'] ?? null,
+                        'gender' => $member['gender'] ?? null,
+                        'localtion' => $member['localtion'] ?? null,
+                        'createat' => $member['createat'] ?? null
                     ]
                 ], 200);
+                return;
             }
         }
+
+        if (isset($payload['user_id'])) {
+            $userModel = new User();
+            $user = $userModel->findById((int) $payload['user_id']);
+
+            if ($user) {
+                $this->jsonResponse([
+                    'status' => 'success',
+                    'data' => [
+                        'id' => $user['id'],
+                        'role' => $user['role'] ?? 'operator',
+                        'op_name' => $user['op_name'] ?? '',
+                        'email' => $user['email'] ?? ''
+                    ]
+                ], 200);
+                return;
+            }
+        }
+
         $this->jsonResponse(['status' => 'error', 'message' => 'ไม่พบข้อมูลผู้ใช้'], 404);
+    }
+
+    public function getUserProfileById($id)
+    {
+        $member = $this->memberModel->findById($id);
+        if ($member) {
+            $machine_type = 'point';
+            $m_id = $member['m_id'] ?? null;
+            if ($m_id) {
+                $configModel = new \App\Models\machine\Config();
+                $config = $configModel->getByMachineId($m_id);
+                if ($config) {
+                    $machine_type = $config['type'];
+                }
+            }
+
+            $this->jsonResponse([
+                'status' => 'success',
+                'data' => [
+                    'id' => $member['id'],
+                    'fname' => $member['fname'],
+                    'lname' => $member['lname'],
+                    'point' => $member['point'],
+                    'machine_type' => $machine_type,
+                    'phonenumber' => $member['phonenumber'] ?? null,
+                    'age' => $member['age'] ?? null,
+                    'gender' => $member['gender'] ?? null,
+                    'localtion' => $member['localtion'] ?? null,
+                    'createat' => $member['createat'] ?? null
+                ]
+            ], 200);
+            return;
+        }
+
+        $this->jsonResponse(['status' => 'error', 'message' => 'ไม่พบข้อมูลผู้ใช้'], 404);
+    }
+
+    public function getHistory()
+    {
+        $auth = new \App\Middleware\AuthMiddleware();
+        $payload = $auth->checkToken();
+
+        if (!isset($payload['member_id'])) {
+            $this->jsonResponse(['status' => 'error', 'message' => 'Token ไม่ถูกต้อง'], 401);
+        }
+
+        $pointlogModel = new \App\Models\machine\Pointlog();
+        $logs = $pointlogModel->getByUserId($payload['member_id']);
+
+        $this->jsonResponse([
+            'status' => 'success',
+            'data' => $logs
+        ], 200);
     }
 }

@@ -36,21 +36,37 @@ class Basemodel
 
     public function Update($id, $data)
     {
-        $sql = "UPDATE " . $this->table . " SET ";
-        $sql .= implode(",", array_map(fn($key) => "$key = :$key", array_keys($data)));
-        $sql .= " WHERE " . $this->primarykey . " = :id";
+        if (empty($data)) {
+            return false;
+        }
+
+        $existsSql = "SELECT 1 FROM `" . $this->table . "` WHERE `" . $this->primarykey . "` = :id LIMIT 1";
+        $existsStmt = $this->db->prepare($existsSql);
+        $existsStmt->execute([':id' => $id]);
+
+        if (!$existsStmt->fetchColumn()) {
+            return false;
+        }
+
+        $sql = "UPDATE `" . $this->table . "` SET ";
+        $sql .= implode(",", array_map(fn($key) => "`$key` = :$key", array_keys($data)));
+        $sql .= " WHERE `" . $this->primarykey . "` = :id";
         $stmt = $this->db->prepare($sql);
         $data['id'] = $id;
-        $stmt->execute($data);
+        $executed = $stmt->execute($data);
 
-        return $stmt->rowCount();
+        if (!$executed) {
+            return false;
+        }
+
+        return $stmt->rowCount() > 0 ? $stmt->rowCount() : 1;
     }
 
 
     public function Create($data)
     {
-        $sql = "INSERT INTO " . $this->table . " SET ";
-        $sql .= implode(",", array_map(fn($key) => "$key = :$key", array_keys($data)));
+        $sql = "INSERT INTO `" . $this->table . "` SET ";
+        $sql .= implode(",", array_map(fn($key) => "`$key` = :$key", array_keys($data)));
         $stmt = $this->db->prepare($sql);
         $stmt->execute($data);
         return $stmt->rowCount();

@@ -13,7 +13,10 @@ class machine extends Basemodel
 
     public function getMachineByuserID($id): array
     {
-        $sql = "SELECT * FROM {$this->table} WHERE op_id = :op_id";
+        $sql = "SELECT m.*, c.type AS config_type 
+                FROM {$this->table} m 
+                LEFT JOIN tb_config c ON m.id = c.m_id 
+                WHERE m.op_id = :op_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':op_id' => $id]);
         return $stmt->fetchAll();

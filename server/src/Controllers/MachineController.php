@@ -32,9 +32,9 @@ class MachineController extends BaseController
                 ], 200);
             } else {
                 $this->jsonResponse([
-                    'status' => 'error',
-                    'message' => 'ไม่พบข้อมูลเครื่องจักร'
-                ], 404);
+                    'status' => 'success',
+                    'data' => []
+                ], 200);
             }
         } else {
             $this->jsonResponse([
@@ -49,7 +49,10 @@ class MachineController extends BaseController
     {
         $data = $this->getJsonInput();
         $this->checkEmpty($data, ['name', 'location', 'op_id']);
-        
+
+        $data['status'] = !empty($data['status']) ? $data['status'] : 'รออนุมัติ';
+        $data['count'] = isset($data['count']) ? (int)$data['count'] : 0;
+
         $machine = $this->machine->Create($data);
         if ($machine) {
             $this->jsonResponse([
@@ -60,6 +63,22 @@ class MachineController extends BaseController
             $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'เกิดข้อผิดพลาดในการเพิ่มข้อมูล'
+            ], 500);
+        }
+    }
+
+    public function deleteMachine($id)
+    {
+        $deleted = $this->machine->Delete($id);
+        if ($deleted) {
+            $this->jsonResponse([
+                'status' => 'success',
+                'message' => 'ลบข้อมูลสำเร็จ'
+            ], 200);
+        } else {
+            $this->jsonResponse([
+                'status' => 'error',
+                'message' => 'เกิดข้อผิดพลาดในการลบข้อมูล'
             ], 500);
         }
     }
