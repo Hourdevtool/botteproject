@@ -44,7 +44,7 @@ access.log
 *.tmp
 temp/
 tmp/
-
+app/sound/
 # Uploaded Files (if the system has file uploads)
 server/uploads/
 server/public/uploads/
