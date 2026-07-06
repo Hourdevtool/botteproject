@@ -37,9 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 spl_autoload_register(function ($class) {
     $base_dir = __DIR__ . '/';
 
-    $class = str_replace('App\\', 'src/', $class);
-    $class = str_replace('Config\\', 'config/', $class);
-    $file = $base_dir . str_replace('\\', '/', $class) . '.php';
+    $resolvedClass = $class;
+    $resolvedClass = str_replace('App\\Middleware\\', 'src/Middlewares/', $resolvedClass);
+    $resolvedClass = str_replace('App\\', 'src/', $resolvedClass);
+    $resolvedClass = str_replace('Config\\', 'config/', $resolvedClass);
+    $file = $base_dir . str_replace('\\', '/', $resolvedClass) . '.php';
 
     if (file_exists($file)) {
         require $file;

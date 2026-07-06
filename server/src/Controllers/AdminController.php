@@ -64,24 +64,33 @@ class AdminController extends BaseController
         $this->jsonResponse(['status' => 'error', 'message' => 'เกิดข้อผิดพลาดในการอัปเดต'], 500);
     }
 
-    // อนุมัติการออกตู้ใหม่เพื่อให้ใช้งานได้
+// อนุมัติการออกตู้ใหม่ หรือ ยกเลิกการอนุมัติเพื่อให้ใช้งานไม่ได้
     public function approveMachine($id)
     {
         $data = $this->getJsonInput();
         $this->checkEmpty($data, ['allow']); // 1 or 0
+
+        $allow = (int) $data['allow'];
         
+        $nextStatus = $allow === 1 ? 'อนุมัติการใช้งานแล้ว' : 'ไม่อนุมัติการใช้งาน';
+
         $config = $this->configModel->getByMachineId($id);
         if ($config) {
-            $this->configModel->Update($config['id'], ['allow' => $data['allow']]);
+            $this->configModel->Update($config['id'], ['allow' => $allow]);
         } else {
             $this->configModel->Create([
                 'm_id' => $id,
-                'allow' => $data['allow'],
+                'allow' => $allow,
                 'type' => 'point'
             ]);
         }
 
-        $this->jsonResponse(['status' => 'success', 'message' => 'อนุมัติตู้สำเร็จ'], 200);
+        $this->machineModel->Update($id, ['status' => $nextStatus]);
+
+        $this->jsonResponse([
+            'status' => 'success', 
+            'message' => $allow === 1 ? 'อนุมัติตู้สำเร็จ' : 'เปลี่ยนสถานะเป็นไม่อนุมัติการใช้งานเรียบร้อย'
+        ], 200);
     }
 
     // ดูสรุปผลข้อมูลได้

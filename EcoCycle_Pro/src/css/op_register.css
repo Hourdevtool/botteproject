@@ -1,0 +1,255 @@
+/* op_register.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+.op-register-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #E7F6F1;
+  font-family: 'Inter', sans-serif;
+  padding: 40px 20px;
+}
+
+.op-register-card {
+  display: flex;
+  max-width: 1000px;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+/* Left Section */
+.op-register-left {
+  flex: 1;
+  background-color: #5EBC69;
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+.op-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  margin-top: 0;
+  line-height: 1.2;
+  color: #144923;
+}
+
+.op-subtitle {
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 50px;
+  color: #144923;
+  opacity: 0.9;
+}
+
+.op-features {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.op-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.op-feature-icon {
+  width: 44px;
+  height: 44px;
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+.op-feature-text h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  color: #144923;
+}
+
+.op-feature-text p {
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+  color: #144923;
+  opacity: 0.8;
+}
+
+/* Right Section */
+.op-register-right {
+  flex: 1.1;
+  padding: 60px 50px;
+  background-color: #ffffff;
+}
+
+.op-form-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #144923;
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.op-form-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.op-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.op-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.op-form-row {
+  display: flex;
+  gap: 20px;
+}
+
+.op-half {
+  flex: 1;
+}
+
+.op-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.op-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+}
+
+.op-input-icon {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  color: #888;
+}
+
+.op-input-wrapper input,
+.op-input-wrapper textarea {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  border: 1px solid #E0E0E0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #333;
+  transition: border-color 0.2s;
+  background-color: #ffffff;
+}
+
+.op-input-wrapper textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.op-input-wrapper input:focus,
+.op-input-wrapper textarea:focus {
+  outline: none;
+  border-color: #5EBC69;
+}
+
+.op-input-wrapper input::placeholder,
+.op-input-wrapper textarea::placeholder {
+  color: #B0B0B0;
+}
+
+.op-submit-btn {
+  background-color: #5EBC69;
+  color: #ffffff;
+  border: none;
+  border-radius: 30px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+}
+
+.op-submit-btn:hover {
+  background-color: #51A85A;
+}
+
+.op-submit-btn:disabled {
+  background-color: #9FD5A1;
+  cursor: wait;
+}
+
+.op-form-status {
+  margin-top: 4px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.op-form-status.success {
+  background: #E7F6F1;
+  color: #144923;
+}
+
+.op-form-status.error {
+  background: #FDECEC;
+  color: #8A1F1F;
+}
+
+.op-terms {
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+  margin-top: 15px;
+  margin-bottom: 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .op-register-card {
+    flex-direction: column;
+  }
+  
+  .op-register-left {
+    padding: 40px 30px;
+  }
+  
+  .op-register-right {
+    padding: 40px 30px;
+  }
+}
+
+@media (max-width: 600px) {
+  .op-form-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+}

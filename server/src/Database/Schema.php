@@ -78,6 +78,18 @@ class Schema {
                 FOREIGN KEY (m_id) REFERENCES tb_machine(id) ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางประวัติการใช้แต้ม'",
 
+            // 7. tb_redeem_request
+            "CREATE TABLE IF NOT EXISTS tb_redeem_request (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                u_id INT,
+                m_id INT,
+                amount FLOAT NOT NULL COMMENT 'จำนวนแต้ม/เงินที่ขอแลก',
+                status ENUM('pending','approved','rejected') DEFAULT 'pending',
+                createat DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (u_id) REFERENCES tb_member(id) ON DELETE SET NULL,
+                FOREIGN KEY (m_id) REFERENCES tb_machine(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางคำขอแลกแต้ม/เงิน รอการอนุมัติ'",
+
         ];
 
         foreach ($queries as $sql) {
@@ -99,6 +111,7 @@ class Schema {
             "DROP TABLE IF EXISTS tb_config",
             "DROP TABLE IF EXISTS tb_machine",
             "DROP TABLE IF EXISTS tb_pointlog",
+            "DROP TABLE IF EXISTS tb_redeem_request",
             "SET FOREIGN_KEY_CHECKS = 1"
         ];
 
