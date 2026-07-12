@@ -18,13 +18,18 @@ class AuthController extends BaseController
 
     public function login()
     {
-
         $data = $this->getJsonInput();
-        $this->checkEmpty($data, ['email', 'password']);
+        
+        $identifier = $data['identifier'] ?? $data['email'] ?? null;
+        $password = $data['password'] ?? null;
+
+        if (!$identifier || !$password) {
+            $this->jsonResponse(['status' => 'error', 'message' => 'กรุณากรอกข้อมูลให้ครบถ้วน'], 400);
+            return;
+        }
 
         $user_model = new User();
-
-        $user = $user_model->getByEmail($data['email']);
+        $user = $user_model->getByIdentifier($identifier);
 
         if ($user && password_verify($data['password'], $user['password'])) {
 
@@ -77,7 +82,7 @@ class AuthController extends BaseController
         } else {
             $this->jsonResponse([
                 "status" => "error",
-                "message" => "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
+                "message" => "เบอร์หรือรหัสผ่านไม่ถูกต้อง"
             ], 401);
         }
     }

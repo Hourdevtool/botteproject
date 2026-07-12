@@ -29,14 +29,13 @@ class OperatorController extends BaseController
         $this->checkEmpty($data, ['type']); // type: point or money
 
         $config = $this->configModel->getByMachineId($id);
+        $db = (new \Config\Database())->connect();
         if ($config) {
-            $this->configModel->Update($config['id'], ['type' => $data['type']]);
+            $stmt = $db->prepare("UPDATE tb_config SET `type` = :type WHERE `id` = :id");
+            $stmt->execute([':type' => $data['type'], ':id' => $config['id']]);
         } else {
-            $this->configModel->Create([
-                'm_id' => $id,
-                'type' => $data['type'],
-                'allow' => 0 // Default need admin approval? Assuming already created.
-            ]);
+            $stmt = $db->prepare("INSERT INTO tb_config (`m_id`, `type`, `allow`) VALUES (:m_id, :type, 0)");
+            $stmt->execute([':m_id' => $id, ':type' => $data['type']]);
         }
 
         // กรณี money ให้คิดเรทเงินประมาณ 80% ของราคาขายขวดต่อน้ำหนัก 1 กรัม 

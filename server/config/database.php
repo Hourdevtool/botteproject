@@ -22,6 +22,7 @@ class Database {
         $this->user = $_ENV['user'];
         $this->password = $_ENV['password'];
         $this->dbname = $_ENV['dbname'];
+        $this->port = isset($_ENV['port']) ? $_ENV['port'] : '3306';
     }
 
 
@@ -30,7 +31,7 @@ class Database {
             return self::$conn;
         }
 
-        $dns = "mysql:host=".$this->host.";dbname=".$this->dbname. ";charset=utf8mb4";
+        $dns = "mysql:host=".$this->host.";port=".$this->port.";dbname=".$this->dbname. ";charset=utf8mb4";
 
 
         try{

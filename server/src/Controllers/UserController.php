@@ -230,4 +230,41 @@ class UserController extends BaseController
         }
         $this->jsonResponse(['status' => 'error', 'message' => 'ไม่พบข้อมูลผู้ใช้'], 404);
     }
+
+    // ดึงข้อมูลสถานะตู้ (จำนวนขวดและการตั้งค่า)
+    public function getMachineStatus($m_id)
+    {
+        $machineModel = new \App\Models\machine\machine();
+        $machine = $machineModel->findById($m_id);
+
+        if (!$machine) {
+            $this->jsonResponse(['status' => 'error', 'message' => 'ไม่พบข้อมูลตู้'], 404);
+            return;
+        }
+
+        $configModel = new \App\Models\machine\Config();
+        $config = $configModel->getByMachineId($m_id);
+
+        $pointrateModel = new \App\Models\machine\Pointrate();
+        $rates = $pointrateModel->getByMachineId($m_id);
+        $rateData = [];
+        $isMoney = ($config && $config['type'] === 'money');
+        foreach ($rates as $r) {
+            $val = floatval($r['value']);
+            if ($isMoney) {
+                $val = $val / 0.8;
+            }
+            $rateData[$r['key']] = $val;
+        }
+
+        $this->jsonResponse([
+            'status' => 'success',
+            'data' => [
+                'count' => intval($machine['count'] ?? 0),
+                'type' => $config ? $config['type'] : 'point',
+                'allow' => $config ? boolval($config['allow']) : false,
+                'rates' => $rateData
+            ]
+        ], 200);
+    }
 }

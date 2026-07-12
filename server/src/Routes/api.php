@@ -32,6 +32,7 @@ $router->get('/api/operator/machines/{id}/users', 'OperatorController', 'getMach
 // ----- User API ------
 $router->post('/api/user/machines/{m_id}/register', 'UserController', 'register');
 $router->post('/api/user/machines/{m_id}/login', 'UserController', 'login');
+$router->get('/api/user/machines/{m_id}/status', 'UserController', 'getMachineStatus');
 $router->post('/api/user/machines/{m_id}/deposit', 'UserController', 'deposit');
 $router->post('/api/user/machines/{m_id}/redeem', 'UserController', 'redeem');
 $router->get('/api/user/me', 'UserController', 'getProfile');

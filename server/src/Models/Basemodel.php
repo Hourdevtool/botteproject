@@ -37,8 +37,8 @@ class Basemodel
     public function Update($id, $data)
     {
         $sql = "UPDATE " . $this->table . " SET ";
-        $sql .= implode(",", array_map(fn($key) => "$key = :$key", array_keys($data)));
-        $sql .= " WHERE " . $this->primarykey . " = :id";
+        $sql .= implode(",", array_map(fn($k) => "`$k` = :$k", array_keys($data)));
+        $sql .= " WHERE `" . $this->primarykey . "` = :id";
         $stmt = $this->db->prepare($sql);
         $data['id'] = $id;
         $stmt->execute($data);
@@ -50,7 +50,7 @@ class Basemodel
     public function Create($data)
     {
         $sql = "INSERT INTO " . $this->table . " SET ";
-        $sql .= implode(",", array_map(fn($key) => "$key = :$key", array_keys($data)));
+        $sql .= implode(",", array_map(fn($k) => "`$k` = :$k", array_keys($data)));
         $stmt = $this->db->prepare($sql);
         $stmt->execute($data);
         return $stmt->rowCount();
