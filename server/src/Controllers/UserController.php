@@ -160,6 +160,81 @@ class UserController extends BaseController
         ], 200);
     }
 
+    public function batch_deposit($m_id)
+    {
+        $auth = new \App\Middleware\AuthMiddleware();
+        $payload = $auth->checkToken();
+
+        $data = $this->getJsonInput();
+        $this->checkEmpty($data, ['bottles']);
+
+        $bottles = $data['bottles'];
+        if (!is_array($bottles) || empty($bottles)) {
+            $this->jsonResponse(['status' => 'error', 'message' => 'ไม่มีข้อมูลขวด'], 400);
+        }
+
+        $configModel = new \App\Models\machine\Config();
+        $config = $configModel->getByMachineId($m_id);
+        if (!$config || $config['allow'] == 0) {
+            $this->jsonResponse(['status' => 'error', 'message' => 'ตู้นี้ยังไม่เปิดให้บริการ'], 403);
+        }
+
+        $pointrateModel = new \App\Models\machine\Pointrate();
+        $rates = $pointrateModel->getByMachineId($m_id);
+        
+        $rateMap = [];
+        foreach ($rates as $r) {
+            $rateMap[$r['key']] = floatval($r['value']);
+        }
+
+        $totalEarned = 0;
+        $totalWeight = 0;
+        $bottleCount = count($bottles);
+
+        foreach ($bottles as $b) {
+            $type = $b['type'] ?? '';
+            $weight = isset($b['weight']) ? floatval($b['weight']) : 1.0;
+            
+            $rateValue = $rateMap[$type] ?? 0;
+            if ($rateValue > 0) {
+                $totalEarned += ($rateValue * $weight);
+                $totalWeight += $weight;
+            }
+        }
+
+        if ($totalEarned <= 0) {
+            $this->jsonResponse(['status' => 'error', 'message' => 'ไม่มีแต้มที่ได้จากรายการขวดนี้'], 400);
+        }
+
+        // อัปเดต Member points
+        $member = $this->memberModel->findById($payload['member_id']);
+        $newPoint = floatval($member['point']) + $totalEarned;
+        $this->memberModel->Update($member['id'], ['point' => $newPoint]);
+
+        // บันทึกประวัติรวม (รวบยอด)
+        $pointlogModel = new \App\Models\machine\Pointlog();
+        $pointlogModel->Create([
+            'u_id' => $member['id'],
+            'm_id' => $m_id,
+            'point' => $totalEarned
+        ]);
+
+        // อัปเดตยอดจำนวนขวดในตู้
+        $machineModel = new \App\Models\machine\machine();
+        $machine = $machineModel->findById($m_id);
+        $newCount = intval($machine['count']) + $bottleCount;
+        $machineModel->Update($m_id, ['count' => $newCount]);
+
+        $this->jsonResponse([
+            'status' => 'success',
+            'message' => 'รับขวดสำเร็จ (รวม ' . $bottleCount . ' ขวด)',
+            'data' => [
+                'earned' => $totalEarned,
+                'total_point' => $newPoint
+            ]
+        ], 200);
+    }
+
     // ทำการแลกแต้ม/แลกเงิน (ตัดแต้ม)
     public function redeem($m_id)
     {

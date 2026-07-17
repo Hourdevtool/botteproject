@@ -9,7 +9,7 @@ $router->post('/api/logout','AuthController','logout');
 $router->post('/api/register','AuthController','register');
 
 
-
+$router->get('/api/central/prices', 'CentralController', 'getPrices');
 
 // ----- machine api------
 
@@ -34,6 +34,7 @@ $router->post('/api/user/machines/{m_id}/register', 'UserController', 'register'
 $router->post('/api/user/machines/{m_id}/login', 'UserController', 'login');
 $router->get('/api/user/machines/{m_id}/status', 'UserController', 'getMachineStatus');
 $router->post('/api/user/machines/{m_id}/deposit', 'UserController', 'deposit');
+$router->post('/api/user/machines/{m_id}/batch_deposit', 'UserController', 'batch_deposit');
 $router->post('/api/user/machines/{m_id}/redeem', 'UserController', 'redeem');
 $router->get('/api/user/me', 'UserController', 'getProfile');
 

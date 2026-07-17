@@ -4,6 +4,7 @@ import time
 import threading
 import json
 import os
+from ai_detector import BottleDetector
 
 def main(page: ft.Page):
     # ตั้งค่าหน้าต่างโปรแกรมหลัก
@@ -14,6 +15,8 @@ def main(page: ft.Page):
     page.bgcolor = "#E6FBF2" # สีพื้นหลังใหม่ (Light Mint)
     page.theme_mode = ft.ThemeMode.LIGHT
     page.window.resizable = False
+
+    page.detector = BottleDetector()
 
     # ฟังก์ชันสร้างปุ่มย้อนกลับสไตล์ใหม่ (Modern Button แทนรูปภาพ)
     def get_back_btn(on_click_action):
@@ -34,6 +37,9 @@ def main(page: ft.Page):
     # -------------------------------------------------------------------
     def show_home(e=None):
         page.controls.clear()
+        
+        if getattr(page, 'detector', None):
+            page.detector.stop()
         
         # ข้อความต้อนรับด้านซ้าย (Hero Section)
         hero_text = ft.Container(
@@ -172,6 +178,8 @@ def main(page: ft.Page):
         
         # ตั้งค่าสถานะการโหลดข้อมูล loop
         page.is_polling = True
+        page.session_bottles = []
+        page.machine_rates = {}
         
         # ตรวจสอบข้อมูลสมาชิกใน page
         if hasattr(page, 'member_data'):
@@ -183,6 +191,8 @@ def main(page: ft.Page):
         else:
             display_user = "สมาชิกทั่วไป"
             display_point = "0 แต้ม"
+            
+        point_text_control = ft.Text(display_point, size=16, color="#48BB78", weight="bold")
             
         # Top App Bar (โลโก้ซ้าย + โปรไฟล์ขวา)
         top_bar = ft.Container(
@@ -198,7 +208,7 @@ def main(page: ft.Page):
                         ft.Text("👤", size=40),
                         ft.Column([
                             ft.Text(display_user, size=20, color="#064E3B", weight="bold"),
-                            ft.Text(display_point, size=16, color="#48BB78", weight="bold"),
+                            point_text_control,
                         ], spacing=0, alignment="center")
                     ], spacing=15),
                     bgcolor="white",
@@ -264,11 +274,101 @@ def main(page: ft.Page):
                 on_click=on_click if is_active else None
             )
         
+        def handle_bottle_detected(bottle_type, weight, original_class):
+            if len(page.session_bottles) >= 10:
+                return
+                
+            print(f"Bottle detected: {bottle_type}, weight: {weight}")
+            
+            # เล่นเสียงผ่าน Windows API โดยตรง (เพราะ Flet เวอร์ชันเก่าไม่มี ft.Audio)
+            audio_path = os.path.abspath(f"sound/type_bottle_sound/{original_class}_th.mp3")
+            if os.path.exists(audio_path):
+                import ctypes
+                try:
+                    # ปิดไฟล์เก่าที่อาจจะเล่นค้างอยู่ก่อน
+                    ctypes.windll.winmm.mciSendStringW(f'close bot_audio', None, 0, None)
+                    # เปิดและเล่นไฟล์ใหม่
+                    ctypes.windll.winmm.mciSendStringW(f'open "{audio_path}" type mpegvideo alias bot_audio', None, 0, None)
+                    ctypes.windll.winmm.mciSendStringW(f'play bot_audio', None, 0, None)
+                except Exception as e:
+                    print("Audio play error:", e)
+                
+            rate_val = page.machine_rates.get(bottle_type, 0.0)
+            earned_points = float(weight) * float(rate_val)
+            
+            bottle_data = {
+                "type": bottle_type,
+                "weight": weight,
+                "earned": earned_points
+            }
+            
+            page.session_bottles.append(bottle_data)
+            bottle_count_text.value = str(len(page.session_bottles))
+            page.update()
+            
+            # ตรวจสอบว่าครบ 10 ขวดหรือยัง ถ้าครบให้หยุดกล้องทันที
+            if len(page.session_bottles) >= 10:
+                print("Max 10 bottles reached for this session. Stopping AI.")
+                if getattr(page, 'detector', None):
+                    page.detector.stop()
+                snack = ft.SnackBar(ft.Text("คุณใส่ขวดครบ 10 ขวดแล้ว กรุณากดรับรางวัล", size=30), bgcolor="#D69E2E", open=True)
+                page.overlay.append(snack)
+                page.update()
+
+        if getattr(page, 'detector', None):
+            page.detector.callback = handle_bottle_detected
+            page.detector.start()
+        
         def handle_redeem(e):
-            print("Clicked redeem")
+            if not page.session_bottles:
+                snack = ft.SnackBar(ft.Text("คุณยังไม่ได้ใส่ขวดเลยครับ!", size=30), bgcolor="#E53E3E", open=True)
+                page.overlay.append(snack)
+                page.update()
+                return
+                
+            if hasattr(page, 'user_token'):
+                payload = {
+                    "bottles": page.session_bottles
+                }
+                headers = {"Authorization": f"Bearer {page.user_token}"}
+                try:
+                    res = requests.post("http://127.0.0.1/bottle_api/api/user/machines/1/batch_deposit", json=payload, headers=headers)
+                    try:
+                        res_data = res.json()
+                    except Exception as json_ex:
+                        print("RAW RESPONSE:", res.text)
+                        raise json_ex
+                        
+                    if res.status_code == 200:
+                        snack = ft.SnackBar(ft.Text(res_data.get('message', "รับแต้มสำเร็จ!"), size=30), bgcolor="#38A169", open=True)
+                        page.overlay.append(snack)
+                        page.session_bottles = []
+                        bottle_count_text.value = "0"
+                        
+                        # อัปเดตแต้มล่าสุดใน UI ทันที
+                        if 'data' in res_data and 'total_point' in res_data['data']:
+                            new_point = res_data['data']['total_point']
+                            page.member_data['point'] = new_point
+                            point_text_control.value = f"{new_point} แต้ม"
+                            
+                        # แลกแต้มเสร็จแล้ว เริ่ม AI ใหม่อีกครั้งเพื่อรับรอบต่อไป
+                        if getattr(page, 'detector', None):
+                            page.detector.start()
+                    else:
+                        error_msg = f"เกิดข้อผิดพลาดในการรับแต้ม (Code: {res.status_code})"
+                        print("Error from batch_deposit:", res.status_code, res.text)
+                        snack = ft.SnackBar(ft.Text(error_msg, size=30), bgcolor="#E53E3E", open=True)
+                        page.overlay.append(snack)
+                except Exception as ex:
+                    print("API Error on batch_deposit:", ex)
+                    snack = ft.SnackBar(ft.Text("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้", size=30), bgcolor="#E53E3E", open=True)
+                    page.overlay.append(snack)
+            page.update()
             
         def poll_machine_status():
             m_id = 1
+            last_m_type = None
+            last_allow = None
             while getattr(page, 'is_polling', False):
                 try:
                     response = requests.get(f"http://127.0.0.1/bottle_api/api/user/machines/{m_id}/status?t={time.time()}")
@@ -279,26 +379,50 @@ def main(page: ft.Page):
                             count = m_data['count']
                             m_type = m_data['type']
                             allow = m_data['allow']
+                            rates = m_data.get('rates', {})
                             
-                            # อัปเดตตัวเลข
-                            bottle_count_text.value = str(count)
+                            page.machine_rates = rates
                             
-                            # อัปเดตปุ่มตาม type
-                            if allow:
-                                if m_type == 'point':
-                                    reward_btn_container.content = modern_button("สะสมแต้ม", "รับแต้มพิเศษเข้าบัญชี", "⭐", handle_redeem)
-                                else:
-                                    reward_btn_container.content = modern_button("รับเงินสด", "รับคูปองเงินสดส่วนลด", "💰", handle_redeem)
-                            else:
-                                reward_btn_container.content = modern_button("ปิดบริการ", "ตู้ปิดรับขวดชั่วคราว", "⚠️", None, False)
-                                
+                            # อัปเดตตัวเลขแบบ Real-time ถ้ามีข้อมูลอื่นๆ
                             page.pubsub.send_all("update")
+                            # อัปเดตปุ่มตาม type เฉพาะเมื่อมีการเปลี่ยนแปลง
+                            if m_type != last_m_type or allow != last_allow:
+                                last_m_type = m_type
+                                last_allow = allow
+                                
+                                title_text = reward_btn.content.controls[2]
+                                desc_text = reward_btn.content.controls[3]
+                                
+                                if allow:
+                                    if m_type == 'point':
+                                        title_text.value = "สะสมแต้ม"
+                                        desc_text.value = "รับแต้มพิเศษเข้าบัญชี"
+                                    else:
+                                        title_text.value = "รับเงินสด"
+                                        desc_text.value = "รับคูปองเงินสดส่วนลด"
+                                    reward_btn.on_click = handle_redeem
+                                    title_text.color = "#064E3B"
+                                else:
+                                    title_text.value = "ปิดบริการ"
+                                    desc_text.value = "ตู้ปิดรับขวดชั่วคราว"
+                                    reward_btn.on_click = None
+                                    title_text.color = "#E53E3E"
+                                
+                                page.pubsub.send_all("update")
                 except Exception as ex:
+                    if "destroyed session" in str(ex).lower():
+                        break  # โปรแกรมถูกปิดไปแล้ว ให้ออกจาก Loop เลย
                     print(f"Polling Error: {ex}")
                 time.sleep(0.5)
 
+        # ปุ่มรับแต้ม
+        reward_btn = modern_button("รับแต้ม (Redeem)", "รวมคะแนนและกลับหน้าหลัก", "🪙", handle_redeem, is_active=True)
+        reward_btn_container.content = reward_btn
+
         def on_back(e):
             page.is_polling = False
+            if getattr(page, 'detector', None):
+                page.detector.stop()
             show_home(e)
 
         back_btn = get_back_btn(on_back)
@@ -314,6 +438,9 @@ def main(page: ft.Page):
     # -------------------------------------------------------------------
     def show_staff_login(e=None):
         page.controls.clear()
+        
+        if getattr(page, 'detector', None):
+            page.detector.stop()
         
         saved_phone = None
         try:
@@ -488,6 +615,9 @@ def main(page: ft.Page):
     def show_register(e=None):
         page.controls.clear()
         
+        if getattr(page, 'detector', None):
+            page.detector.stop()
+        
         # พื้นหลังสีขาว
         bg_white = ft.Container(bgcolor="white", width=1920, height=1080)
         
@@ -566,13 +696,25 @@ def main(page: ft.Page):
             print(f"Error fetching machine status: {ex}")
 
         # เก็บเรทที่แก้ไขได้ชั่วคราวบนหน้าจอ (แยกตามโหมด)
-        point_rates = {"clear": 10.0, "opaque": 8.0, "brown": 5.0}
-        money_rates = {"clear": 10.0, "opaque": 8.0, "brown": 5.0}
+        point_rates = {"clear": 20.0, "opaque": 15.0, "brown": 10.0}
+        money_rates = {"clear": 20.0, "opaque": 15.0, "brown": 10.0}
         
+        # ดึงราคากลาง (Central API)
+        try:
+            cen_res = requests.get(f"http://127.0.0.1/bottle_api/api/central/prices?t={time.time()}")
+            if cen_res.status_code == 200:
+                c_data = cen_res.json()
+                if c_data.get('status') == 'success':
+                    for k, v in c_data['data'].items():
+                        money_rates[k] = float(v)
+        except Exception as ex:
+            print(f"Error fetching central prices: {ex}")
+
+        # ถ้าเป็นโหมดแต้ม ให้ดึงเรทจากฐานข้อมูล ถ้าเป็นเงิน ให้ใช้ราคากลางที่ดึงมา
         if m_type == "point":
             point_rates = db_rates.copy()
         elif m_type == "money":
-            money_rates = db_rates.copy()
+            pass # Use central API prices as editable base_prices
 
         current_type = [m_type]
         
