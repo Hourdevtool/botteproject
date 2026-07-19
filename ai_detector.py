@@ -36,10 +36,6 @@ except:
 
 class BottleDetector:
     def __init__(self, callback=None):
-        """
-        callback: ฟังก์ชันที่จะถูกเรียกเมื่อตรวจพบขวด 
-        รูปแบบ: callback(bottle_type, weight)
-        """
         self.callback = callback
         self.is_running = False
         self.thread = None
@@ -47,6 +43,10 @@ class BottleDetector:
         # ใช้ Relative path เผื่อย้ายเครื่อง
         self.model_path = os.path.join("app", "bottle_model.pt")
         self.model = None
+        self.cap = None
+        
+        import atexit
+        atexit.register(self.stop)
 
         self.current_weight = 0.0
         self.serial_thread = None
@@ -110,12 +110,29 @@ class BottleDetector:
 
     def stop(self):
         self.is_running = False
-        if self.thread is not None and self.thread != threading.current_thread():
-            self.thread.join(timeout=2.0)
+        
+        if self.cap:
+            try:
+                self.cap.release()
+            except:
+                pass
+            self.cap = None
+            
+        if self.thread and self.thread.is_alive():
+            # ไม่ควรใช้ join(timeout) นานๆ ใน main thread ของ flet
+            pass
+        if self.serial_thread and self.serial_thread.is_alive():
+            pass
         print("AI Detector Stopped.")
 
     def _run_loop(self):
-        cap = cv2.VideoCapture(0)
+        import platform
+        if platform.system() == "Windows":
+            cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        else:
+            cap = cv2.VideoCapture(0)
+            
+        self.cap = cap
         if not cap.isOpened():
             print("Error: Cannot open camera")
             self.is_running = False
